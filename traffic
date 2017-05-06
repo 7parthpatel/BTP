@@ -1,0 +1,458 @@
+library(shiny)
+library(shinydashboard)
+library(shinyTime)
+library(DBI)
+library(RMySQL)
+library(plotly)
+library(leaflet)
+library(googleway)
+options(warn=-1)
+mydb = dbConnect(MySQL(), user='root', password='p', dbname='p', host='localhost')
+map <- leaflet() %>% addTiles() %>% mapOptions(zoomToLimits = "first") #%>% setView(72.552060,23.037989,12)
+shinyUI <- fluidPage(
+  fluidRow(
+    tabsetPanel(
+      tabPanel(title = 'Vehicular Classification',
+               dashboardPage(
+                 dashboardHeader(title = "Select Parameters"),
+                 dashboardSidebar(
+                   dateRangeInput('dateRange',
+                                  label = 'Select Date Range:',
+                                  start = '2017-03-17',
+                                  end = '2017-03-17'
+                   ),
+                   sliderInput("hourrange", " Select Hour Range:",
+                               min = 0, max = 23, value = c(0,23)),
+                   selectInput("slider", "Select Location:",
+                               c("Commerce College Six Road BRTS STAND TO Dada Saheb Na Pagla" = 1,
+                                 "Dada Saheb Na Pagala to LD College of Engineering" = 2,
+                                 "LD College of Engineering to Lalbhai Dalpatbhai Museum" = 3,
+                                 "Lalbhai Dalpatbhai Museum to Xavier Institute of Computer Applications" = 4,
+                                 "Xavier Institute of Computer Applications to Surajmal Zaveri Road"=5,
+                                 "Surajmal Zaveri Road to Umashankar Joshi Marg, Sardar Patel Nagar"=6,
+                                 "Umashankar Joshi Marg, Sardar Patel Nagar to Shambhus coffee bar"=7,
+                                 "Shambhus coffee bar to SV Desai Marg, University Area"=8,
+                                 "SV Desai Marg, University Area to Kali mata nu mandir"=9,
+                                 "Kali mata nu mandir to CA Circle"=10)),
+                   checkboxGroupInput("variable", "Select Vehicle Type:",
+                               c("2 wheeler"="WMV2",
+                                 "Cars"="CarV",	
+                                 "Bus"="BusV",	
+                                 "Light Goods Vehicle"="LGV",	
+                                 "HeavyGoods Rigid2"="HGVR2",
+                                 "HeavyGoods Rigid3"="HGVR3",
+                                 "HeavyGoods Rigid4"="HGVR4",
+                                 "HeavyGoods RIGID axle3"="HGVA3",
+                                 "HeavyGoods RIGID axle5"="HGVA5")
+                               ,selected = c("HGVR2","HGVR3","HGVR4","HGVA3","HGVA5")
+                   ),
+                   
+                   selectInput("dist", "Select Distribution type:",
+                               c("Total No. Of Vehicles" = "SUM(",
+                                 "Average Vehicles Per Minute" = "AVG(")),
+                   hr()
+                 ),
+                 dashboardBody(
+                   #fluidRow(
+                     plotlyOutput("plot1",height = 700,width = 1000)
+                   #)
+                 )
+                 
+               )
+      ),
+      tabPanel(title = 'Vehicular traffic comparison by routes',
+               dashboardPage(
+                 dashboardHeader(title  = "Select Parameters"),
+                 dashboardSidebar(
+                   dateInput('dateinput',
+                             label = 'Select Date:',
+                             value = '2017-04-01'
+                   ),
+                   sliderInput("hourrange4", "Select Hour Range:",
+                               min = 0, max = 23, value = c(0,23)),
+                   selectInput("variable2", "Select Vehicle Type:",
+                               c("2 wheeler"="WMV2",
+                                 "Cars"="CarV",	
+                                 "Bus"="BusV",	
+                                 "Light Goods Vehicle"="LGV",	
+                                 "HeavyGoods Rigid2"="HGVR2",
+                                 "HeavyGoods Rigid3"="HGVR3",
+                                 "HeavyGoods Rigid4"="HGVR4",
+                                 "HeavyGoods RIGID axle3"="HGVA3",
+                                 "HeavyGoods RIGID axle5"="HGVA5"
+                               )
+                               ,selected = "WMV2"
+                   ),
+                   selectInput("slider1", "Select Location-1:",
+                               c("Commerce College Six Road BRTS STAND TO Dada Saheb Na Pagla" = 1,
+                                 "Dada Saheb Na Pagala to LD College of Engineering" = 2,
+                                 "LD College of Engineering to Lalbhai Dalpatbhai Museum" = 3,
+                                 "Lalbhai Dalpatbhai Museum to Xavier Institute of Computer Applications" = 4,
+                                 "Xavier Institute of Computer Applications to Surajmal Zaveri Road"=5,
+                                 "Surajmal Zaveri Road to Umashankar Joshi Marg, Sardar Patel Nagar"=6,
+                                 "Umashankar Joshi Marg, Sardar Patel Nagar to Shambhus coffee bar"=7,
+                                 "Shambhus coffee bar to SV Desai Marg, University Area"=8,
+                                 "SV Desai Marg, University Area to Kali mata nu mandir"=9,
+                                 "Kali mata nu mandir to CA Circle"=10)),
+                   selectInput("slider2", "Select Location-2:",
+                               c("Commerce College Six Road BRTS STAND TO Dada Saheb Na Pagla" = 1,
+                                 "Dada Saheb Na Pagala to LD College of Engineering" = 2,
+                                 "LD College of Engineering to Lalbhai Dalpatbhai Museum" = 3,
+                                 "Lalbhai Dalpatbhai Museum to Xavier Institute of Computer Applications" = 4,
+                                 "Xavier Institute of Computer Applications to Surajmal Zaveri Road"=5,
+                                 "Surajmal Zaveri Road to Umashankar Joshi Marg, Sardar Patel Nagar"=6,
+                                 "Umashankar Joshi Marg, Sardar Patel Nagar to Shambhus coffee bar"=7,
+                                 "Shambhus coffee bar to SV Desai Marg, University Area"=8,
+                                 "SV Desai Marg, University Area to Kali mata nu mandir"=9,
+                                 "Kali mata nu mandir to CA Circle"=10),selected = 2),
+                   selectInput("slider3", "Select Location-3:",
+                               c("Commerce College Six Road BRTS STAND TO Dada Saheb Na Pagla" = 1,
+                                 "Dada Saheb Na Pagala to LD College of Engineering" = 2,
+                                 "LD College of Engineering to Lalbhai Dalpatbhai Museum" = 3,
+                                 "Lalbhai Dalpatbhai Museum to Xavier Institute of Computer Applications" = 4,
+                                 "Xavier Institute of Computer Applications to Surajmal Zaveri Road"=5,
+                                 "Surajmal Zaveri Road to Umashankar Joshi Marg, Sardar Patel Nagar"=6,
+                                 "Umashankar Joshi Marg, Sardar Patel Nagar to Shambhus coffee bar"=7,
+                                 "Shambhus coffee bar to SV Desai Marg, University Area"=8,
+                                 "SV Desai Marg, University Area to Kali mata nu mandir"=9,
+                                 "Kali mata nu mandir to CA Circle"=10),selected = 3),
+                   hr()
+                 ),
+                 dashboardBody(
+                   fluidRow(
+                     plotlyOutput("plot2",height = 600)
+                   ),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr()
+                 )
+                 
+               )
+      ),
+      tabPanel(title = 'Vehicular traffic comparision of route by Date and Time',
+               dashboardPage(
+                 dashboardHeader(title  = "Select Parameters"),
+                 dashboardSidebar(
+                   sliderInput("hourrange3", "Select Hour Range:",
+                               min = 0, max = 23, value = c(0,23)),
+                   dateInput('dateinput1',
+                             label = 'Select Date-1:',
+                             value = Sys.Date()-9
+                   ),
+                   
+                   dateInput('dateinput2',
+                             label = 'Select Date-2:',
+                             value = Sys.Date()-8
+                   ),
+                   dateInput('dateinput3',
+                             label = 'Select Date-3:',
+                             value = Sys.Date()-7
+                   ),
+                   selectInput("variable3", "Select Vehicle Type:",
+                               c("2 wheeler"="WMV2",
+                                 "Cars"="CarV",	
+                                 "Bus"="BusV",	
+                                 "Light Goods Vehicle"="LGV",	
+                                 "HeavyGoods Rigid2"="HGVR2",
+                                 "HeavyGoods Rigid3"="HGVR3",
+                                 "HeavyGoods Rigid4"="HGVR4",
+                                 "HeavyGoods RIGID axle3"="HGVA3",
+                                 "HeavyGoods RIGID axle5"="HGVA5")
+                               ,selected = "WMV2"
+                   ),
+                   selectInput("slider5", "Select Location:",
+                               c("Commerce College Six Road BRTS STAND TO Dada Saheb Na Pagla" = 1,
+                                 "Dada Saheb Na Pagala to LD College of Engineering" = 2,
+                                 "LD College of Engineering to Lalbhai Dalpatbhai Museum" = 3,
+                                 "Lalbhai Dalpatbhai Museum to Xavier Institute of Computer Applications" = 4,
+                                 "Xavier Institute of Computer Applications to Surajmal Zaveri Road"=5,
+                                 "Surajmal Zaveri Road to Umashankar Joshi Marg, Sardar Patel Nagar"=6,
+                                 "Umashankar Joshi Marg, Sardar Patel Nagar to Shambhus coffee bar"=7,
+                                 "Shambhus coffee bar to SV Desai Marg, University Area"=8,
+                                 "SV Desai Marg, University Area to Kali mata nu mandir"=9,
+                                 "Kali mata nu mandir to CA Circle"=10)),
+                   hr()
+                 ),
+                 dashboardBody(
+                   fluidRow(
+                     plotlyOutput("plot3",height = 600)
+                   ),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr()
+                 )
+                 
+               )
+      )# , tabPanel(title = 'Real Time Traffic Density on Map',
+      #             dashboardPage(
+      #               dashboardHeader(title  = "Select Parameters"),
+      #               dashboardSidebar(
+      #                 selectInput("slider4", "Choose Traffic Type:",
+      #                             c("High" = "High",
+      #                               "Medium"="Medium",
+      #                               "Slow" = "Slow",
+      #                               "ALL"="ALL"),selected = "ALL")
+      #               ),
+      #               dashboardBody(
+      #                 leafletOutput("mymap"),
+      #                 p()
+      #               )
+      #               
+      #             )
+      # )
+    )
+  )
+)
+shinyServer <- function(input, output,session) {
+  output$plot1<-renderPlotly(
+    {
+      ihour = as.numeric(input$hourrange[2])
+      chour = strtoi(format(Sys.time(),"%H"))
+      if(as.character(input$dateRange[2])==Sys.Date()){
+        if(ihour <= chour){
+        print("Yes")
+        invalidateLater(30000, session)
+        a <- paste(paste("select ",paste(input$dist[1],as.character(input$variable),") AS",as.character(input$variable),collapse = ",")),"from trafficdata where Date between ",paste("'",input$dateRange,"'",collapse = " and ")," and HOUR(Time) between ",input$hourrange[1]," and",tail(input$hourrange,n=1)," and sensorId=",as.character(input$slider),";")
+        rs = dbSendQuery(mydb,a);
+        data = fetch(rs, n=-1)}
+      }
+      else{
+      a <- paste(paste("select ",paste(input$dist[1],as.character(input$variable),") AS",as.character(input$variable),collapse = ",")),"from trafficdata where Date between ",paste("'",input$dateRange,"'",collapse = " and ")," and HOUR(Time) between ",input$hourrange[1]," and",tail(input$hourrange,n=1)," and sensorId=",as.character(input$slider),";")
+      rs = dbSendQuery(mydb,a);
+      data = fetch(rs, n=-1)
+      }
+      XT = t(data)
+      colnames(XT) <- "No_Of_Vehicle_Passed"
+      xaxistitle <- list(title = "Vehicle Type")
+      plot_ly(data.frame(XT),x=colnames(data),y=~No_Of_Vehicle_Passed,type='bar',width = 0.5)%>%
+        layout(title = "Classification of Vehicle",xaxis = xaxistitle)
+    })
+  
+  output$plot2<-renderPlotly(
+    {
+      a <- paste("select CONCAT(Hour(Time),':',Minute(Time),' to ',Hour(Time),':',Minute(Time)+09) AS t, SUM(",input$variable2,") AS ",input$variable2," from trafficdata where date = '",input$dateinput,"' and HOUR(Time) between ",head(input$hourrange4,n=1)," and",tail(input$hourrange4,n=1)," and SensorId = ",input$slider1," group by UNIX_TIMESTAMP(Time) DIV 600;" )
+      b <- paste("select SUM(",input$variable2,") AS ",input$variable2," from trafficdata where date = '",input$dateinput,"' and HOUR(Time) between ",head(input$hourrange4,n=1)," and",tail(input$hourrange4,n=1)," and SensorId = ",input$slider2," group by UNIX_TIMESTAMP(Time) DIV 600;" )
+      c <- paste("select SUM(",input$variable2,") AS ",input$variable2," from trafficdata where date = '",input$dateinput,"' and HOUR(Time) between ",head(input$hourrange4,n=1)," and",tail(input$hourrange4,n=1)," and SensorId = ",input$slider3," group by UNIX_TIMESTAMP(Time) DIV 600;" )
+      z <- c("Commerce College Six Road BRTS STAND TO Dada Saheb Na Pagla",
+             "Dada Saheb Na Pagala to LD College of Engineering",
+             "LD College of Engineering to Lalbhai Dalpatbhai Museum",
+             "Lalbhai Dalpatbhai Museum to Xavier Institute of Computer Applications")
+      
+      r1 <- as.numeric(input$slider1)
+      r2 <- as.numeric(input$slider2)
+      r3 <- as.numeric(input$slider3)
+      
+      print(input$dateinput)
+      
+      dbClearResult(dbListResults(mydb)[[1]])
+      rs = dbSendQuery(mydb, a)
+      data1 = fetch(rs, n=-1)
+      dbClearResult(dbListResults(mydb)[[1]])
+      rs = dbSendQuery(mydb, b)
+      data2 = fetch(rs, n=-1)
+      dbClearResult(dbListResults(mydb)[[1]])
+      rs = dbSendQuery(mydb, c)
+      data3 = fetch(rs, n=-1)
+      data <- data.frame(data1,data2,data3) 
+      colnames(data) <- c("t","d1","d2","d3")
+      ihour = as.numeric(input$hourrange4[2])
+      chour = strtoi(format(Sys.time(),"%H"))
+      if(as.character(input$dateinput)==Sys.Date()){
+        if(ihour <= chour){
+        x= seq((as.numeric(input$hourrange4[1])*6)+1,(as.numeric(input$hourrange4[1])*6)+nrow(data))
+        invalidateLater(30000,session)
+        print("Yes")
+        }
+      }
+      else{
+        x= seq((as.numeric(input$hourrange4[1])*6)+1,((as.numeric(input$hourrange4[2])+1)*6)) 
+      }
+      xaxistitle <- list(title = "Time")
+      yaxistitle <- list(title = "No. of Vehicles")
+      if(r1 == r2){
+        p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d3,name = z[r3], type = 'scatter', mode = 'lines') %>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      if(r1 == r3){
+        p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d2,name = z[r2], type = 'scatter', mode = 'lines') %>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      if(r2 == r3){
+        p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d2,name = z[r2], type = 'scatter', mode = 'lines') %>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      if(r1 == r2 && r2==r3 && r1==r3){
+        p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      if(r1 != r2 && r2 != r3 && r1 != r3){
+        p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d2,name = z[r2], type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d3,name = z[r3], type = 'scatter', mode = 'lines') %>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      p
+    })
+  output$plot3<-renderPlotly(
+    {
+      a <- paste("select CONCAT(Hour(Time),':',Minute(Time),' to ',Hour(Time),':',Minute(Time)+9) AS t, SUM(",input$variable3,") AS ",input$variable3," from trafficdata where date = '",input$dateinput1,"' and HOUR(Time) between ",head(input$hourrange3,n=1)," and",tail(input$hourrange3,n=1)," and SensorId = ",input$slider5," group by UNIX_TIMESTAMP(Time) DIV 600;" )
+      b <- paste("select SUM(",input$variable3,") AS ",input$variable3," from trafficdata where date = '",input$dateinput2,"' and HOUR(Time) between ",head(input$hourrange3,n=1)," and",tail(input$hourrange3,n=1)," and SensorId = ",input$slider5," group by UNIX_TIMESTAMP(Time) DIV 600;" )
+      c <- paste("select SUM(",input$variable3,") AS ",input$variable3," from trafficdata where date = '",input$dateinput3,"' and HOUR(Time) between ",head(input$hourrange3,n=1)," and",tail(input$hourrange3,n=1)," and SensorId = ",input$slider5," group by UNIX_TIMESTAMP(Time) DIV 600;" )
+      dbClearResult(dbListResults(mydb)[[1]])
+      rs = dbSendQuery(mydb, a)
+      data1 = fetch(rs, n=-1)
+      dbClearResult(dbListResults(mydb)[[1]])
+      rs = dbSendQuery(mydb, b)
+      data2 = fetch(rs, n=-1)
+      dbClearResult(dbListResults(mydb)[[1]])
+      rs = dbSendQuery(mydb, c)
+      data3 = fetch(rs, n=-1)
+      ihour = as.numeric(input$hourrange3[2])
+      chour = strtoi(format(Sys.time(),"%H"))
+      if(as.character(input$dateinput1)==Sys.Date() || as.character(input$dateinput2)==Sys.Date() || as.character(input$dateinput3)==Sys.Date()){
+        if(ihour <= chour){
+        if(as.character(input$dateinput1)==Sys.Date()){
+        data <- data.frame(data1,data2[1:nrow(data1),],data3[1:nrow(data1),])
+        }
+        if(as.character(input$dateinput2)==Sys.Date()){
+          data <- data.frame(data1[1:nrow(data2),],data2,data3[1:nrow(data2),])
+        }
+        if(as.character(input$dateinput3)==Sys.Date()){
+          data <- data.frame(data1[1:nrow(data3),],data2[1:nrow(data3),],data3)
+        }
+        x= seq((as.numeric(input$hourrange3[1])*6)+1,(as.numeric(input$hourrange3[1])*6)+nrow(data))
+        invalidateLater(30000,session)
+        print("Yes")
+        }
+      }
+      else{
+        data <- data.frame(data1,data2,data3)
+        x= seq((as.numeric(input$hourrange3[1])*6)+1,((as.numeric(input$hourrange3[2])+1)*6))
+      }
+      colnames(data) <- c("t","d1","d2","d3")
+      xaxistitle <- list(title = "Time")
+      yaxistitle <- list(title = "No. of Vehicles")
+      if(as.character(input$dateinput1) == as.character(input$dateinput2)){
+        p <- plot_ly(data, x = (x/6), y = ~data$d1, name = input$dateinput1,text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d3,name = input$dateinput3, type = 'scatter', mode = 'lines')%>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      if(as.character(input$dateinput1) == as.character(input$dateinput3)){
+        p <- plot_ly(data, x = (x/6), y = ~data$d1, name = input$dateinput1,text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d2,name = input$dateinput2, type = 'scatter', mode = 'lines')%>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      if(as.character(input$dateinput2) == as.character(input$dateinput3)){
+        p <- plot_ly(data, x = (x/6), y = ~data$d1, name = input$dateinput1,text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d2,name = input$dateinput2, type = 'scatter', mode = 'lines')%>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      if(as.character(input$dateinput1) == as.character(input$dateinput2) && as.character(input$dateinput2) == as.character(input$dateinput3) && as.character(input$dateinput1) == as.character(input$dateinput3)){
+        p <- plot_ly(data, x = (x/6), y = ~data$d1, name = input$dateinput2,text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      if(as.character(input$dateinput1) != as.character(input$dateinput2) && as.character(input$dateinput2) != as.character(input$dateinput3) && as.character(input$dateinput1) != as.character(input$dateinput3)){
+        p <- plot_ly(data, x = (x/6), y = ~data$d1, name = input$dateinput1,text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d2,name = input$dateinput2, type = 'scatter', mode = 'lines') %>%
+          add_trace(y = ~data$d3,name = input$dateinput3, type = 'scatter', mode = 'lines')%>%
+          layout(xaxis = xaxistitle,yaxis = yaxistitle)
+      }
+      p
+    })
+  output$mymap <- renderLeaflet({
+    
+    invalidateLater(60000, session)
+    a = Sys.Date()
+    c = format(Sys.time()-60,"%R")
+    c <- paste(c,":00",sep='')
+    print(c)
+    # z = "SELECT AMV FROM trafficdata ORDER BY Date DESC,Time DESC,sensorId desc LIMIT 10"
+    z <- paste("SELECT * FROM trafficdata where Date='",as.character(a),"'and Time > '",as.character(c),"' ORDER BY sensorId LIMIT 10",sep='');
+    print(z)
+    rs = dbSendQuery(mydb,z);
+    data = fetch(rs,n=-1)
+    all <- c(data$AMV)
+    print(all)
+    #print(all)
+    colorvalue <- c()
+    maxm <- 10
+    low <- c()
+    medium <- c()
+    high <- c()
+    for(i in 1:maxm){
+      if(data$AMV[i] <=20){ 
+        colorvalue <- c(colorvalue,"green")
+        low <- c(low,i)
+      }
+      if(data$AMV[i]>20 && data$AMV[i] <= 40){
+        colorvalue <- c(colorvalue,"blue")  
+        medium <- c(medium,i)
+      } 
+      if(data$AMV[i] > 40){ 
+        colorvalue <- c(colorvalue,"red")
+        high <- c(high,i)
+      }
+    }
+    
+    if(input$slider4 =='High'){
+      for (i in high){
+        c <- paste("/home/parth/Desktop/data/data",i,".Rda",sep="")
+        df_polyline <- readRDS(c)
+        map <- map %>% addPolylines(data = df_polyline, lat = ~lat, lng = ~lon,color="red",weight=,popupOptions(keepInView =TRUE))
+      }
+    }
+    if(input$slider4 =='Medium'){
+      
+      for (i in medium){
+        c <- paste("/home/parth/Desktop/data/data",i,".Rda",sep="")
+        df_polyline <- readRDS(c)
+        map <- map %>% addPolylines(data = df_polyline, lat = ~lat, lng = ~lon,color="blue",weight=,popupOptions(keepInView =TRUE))
+      }
+    }
+    if(input$slider4 =='Slow'){
+      
+      for (i in low){
+        c <- paste("/home/parth/Desktop/data/data",i,".Rda",sep="")
+        df_polyline <- readRDS(c)
+        map <- map %>% addPolylines(data = df_polyline, lat = ~lat, lng = ~lon,color="green",weight=,popupOptions(keepInView =TRUE))
+      }
+    }
+    if(input$slider4 =='Slow'){
+      
+      for (i in low){
+        c <- paste("/home/parth/Desktop/data/data",i,".Rda",sep="")
+        df_polyline <- readRDS(c)
+        map <- map %>% addPolylines(data = df_polyline, lat = ~lat, lng = ~lon,color="green",weight=,popupOptions(keepInView =TRUE))
+      }
+    }
+    if(input$slider4 =='ALL'){
+      
+      for (i in 1:maxm){
+        c <- paste("/home/parth/Desktop/data/data",i,".Rda",sep="")
+        df_polyline <- readRDS(c)
+        map <- map %>% addPolylines(data = df_polyline, lat = ~lat, lng = ~lon,color=colorvalue[i],weight=,popupOptions(keepInView =TRUE))
+      }
+    }
+    map
+  })
+}
+runApp(shinyApp(ui=shinyUI, server = shinyServer),host="10.20.24.11",port=5051)
