@@ -1,0 +1,553 @@
+library(shiny)
+library(shinydashboard)
+library(plotly)
+library(RMySQL)
+library(DBI)
+options(warn=-1)
+mydb = dbConnect(MySQL(), user='root', password='p', dbname='smart_lighting', host='localhost')
+shinyUI <- fluidPage(
+  fluidRow(
+    tabsetPanel(
+      tabPanel(title = 'Energy Consumption comparison by Location',
+               dashboardPage(
+                 dashboardHeader(title  = "Select Parameters"),
+                 dashboardSidebar(
+                   dateInput('dateinput',
+                             label = 'Select Date:',
+                             value = '2017-04-17'
+                   ),
+                   sliderInput("hourrange", "Select Hour Range:",
+                               min = 0, max = 23, value = c(0,23)),
+                   selectInput("slider1", "Select Location-1:",
+                               c("Printer Room, First Floor" = 1,
+                                 "Printer Room,Second Floor"= 2
+                                 )),
+                   selectInput("slider2", "Select Location-2:",
+                               c("Printer Room, First Floor" = 1,
+                                 "Printer Room,Second Floor"= 2
+                               ),selected = 2),
+                   hr()
+                 ),
+                 dashboardBody(
+                   fluidRow(
+                     plotlyOutput("plot1",height = 600)
+                   ),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr(),
+                   hr()
+                 )
+                 
+               )
+      ), tabPanel(title = 'Energy consumption comparision of Location by Date and Time',
+                  dashboardPage(
+                    dashboardHeader(title  = "Select Parameters"),
+                    dashboardSidebar(
+                      sliderInput("hourrange3", "Select Hour Range:",
+                                  min = 0, max = 23, value = c(0,23)),
+                      dateInput('dateinput1',
+                                label = 'Select Date-1:',
+                                value = Sys.Date()
+                      ),
+                      
+                      dateInput('dateinput2',
+                                label = 'Select Date-2:',
+                                value = Sys.Date()-1
+                      ),
+                      dateInput('dateinput3',
+                                label = 'Select Date-3:',
+                                value = Sys.Date()-2
+                      ),
+                      selectInput("slider5", "Select Location:",
+                                  c("Printer Room, First Floor" = 1,
+                                    "Printer Room,Second Floor"= 2
+                                  )),
+                      hr()
+                    ),
+                    dashboardBody(
+                      fluidRow(
+                        plotlyOutput("plot2",height = 600)
+                      ),
+                      hr(),
+                      hr(),
+                      hr(),
+                      hr(),
+                      hr(),
+                      hr(),
+                      hr(),
+                      hr(),
+                      hr(),
+                      hr()
+                    )
+                    
+                  )
+      ),tabPanel(title = 'Energy consumption of Location',
+                 dashboardPage(
+                   dashboardHeader(title  = "Select Parameters"),
+                   dashboardSidebar(
+                     # sliderInput("hourrange3", "Select Hour Range:",
+                     #             min = 0, max = 23, value = c(0,23)),
+                     dateInput('dateinput4',
+                               label = 'Select Date:',
+                               value = Sys.Date()
+                     ),
+                     selectInput("slider6", "Select Location:",
+                                 c("Printer Room, First Floor" = 1,
+                                   "Printer Room,Second Floor"= 2
+                                 )),
+                     hr()
+                   ),
+                   dashboardBody(
+                     fluidRow(
+                       box(plotlyOutput("plot4",height = 400)),
+                     # ),
+                     # fluidRow(
+                       box(plotlyOutput("plot3",height = 400))
+                     ),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr()
+                   )
+                   
+                 )
+      ),tabPanel(title = 'Energy consumption HeatMap',
+                 dashboardPage(
+                   dashboardHeader(title  = "Select Parameters"),
+                   dashboardSidebar(
+                     # sliderInput("hourrange3", "Select Hour Range:",
+                     #             min = 0, max = 23, value = c(0,23)),
+                     # dateInput('dateinput4',
+                     #           label = 'Select Date:',
+                     #           value = Sys.Date()
+                     # ),
+                     selectInput("slider7", "Select Location:",
+                                 c("Printer Room, First Floor" = 1,
+                                   "Printer Room,Second Floor"= 2
+                                 )),
+                     hr()
+                   ),
+                   dashboardBody(
+                     fluidRow(
+                       box(plotlyOutput("plot5",height = 600))
+                       # ),
+                       # fluidRow(
+                       # box(plotlyOutput("plot3",height = 600))
+                     ),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr(),
+                     hr()
+                   )
+                   
+                 )
+      )
+    )
+  )
+)
+
+#print(input$dateinput)
+shinyServer <- function(input, output,session) {
+  output$plot1<-renderPlotly(
+    {
+rdate = as.character(input$dateinput)
+rdate = strsplit(rdate,"-")
+ihour = as.numeric(input$hourrange[2])
+chour = strtoi(format(Sys.time(),"%H"))
+if(as.character(input$dateinput)==Sys.Date()){
+  if(ihour <= chour){
+    a = format(seq(ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange[1]),0,0), ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange[2]),59,0), "min"),"%R")
+    invalidateLater(30000,session)
+    print("Yes")
+  }
+}
+else{
+a = format(seq(ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange[1]),0,0), ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange[2]),59,0), "min"),"%R")
+}
+query <- paste("select DATE_FORMAT(time, '%H:%i') as Time1"," from Lightstatus where date = '",input$dateinput,"' and HOUR(Time) between ",head(input$hourrange,n=1)," and",tail(input$hourrange,n=1)," and id = ",input$slider1,";" )
+# print(query)
+rs = dbSendQuery(mydb, query)
+data = fetch(rs, n=-1)
+first <- data$Time1
+# print(b)
+#b = c("00:01","00:05","00:09","01:05","01:10","01:13","01:20","01:30","01:59")
+query1 <- paste("select DATE_FORMAT(time, '%H:%i') as Time2"," from Lightstatus where date = '",input$dateinput,"' and HOUR(Time) between ",head(input$hourrange,n=1)," and",tail(input$hourrange,n=1)," and id = ",input$slider2,";" )
+dbClearResult(dbListResults(mydb)[[1]])
+rs1 = dbSendQuery(mydb, query1)
+data1 = fetch(rs1, n=-1)
+second <- data1$Time2
+value <- c(rep("OFF",length(a)))
+value2 <- c(rep("OFF",length(a)))
+# print(value2)
+if(length(first)!=0){
+for(i in 1:length(first)){ 
+  for(j in 1:length(a)) { 
+    if(first[i]==a[j]){
+      if(j==(length(a)-1)){
+        value[j]="ON"
+        value[j+1]="ON"
+        break;
+      }
+      if(j==length(a)){
+      value[j]="ON"
+      break;
+      }
+      else{
+        value[j]="ON"
+        value[j+1]="ON"
+        value[j+2]="ON"
+        break;
+      }
+    }
+  }
+}
+}
+if(length(second)!=0){
+  for(i in 1:length(second)){ 
+    for(j in 1:length(a)) { 
+      if(second[i]==a[j]){
+        if(j==(length(a)-1)){
+          value2[j]="ON"
+          value2[j+1]="ON"
+          break;
+        }
+        if(j==length(a)){
+          value2[j]="ON"
+          break;
+        }
+        else{
+          value2[j]="ON"
+          value2[j+1]="ON"
+          value2[j+2]="ON"
+          break;
+        }
+      }
+    }
+  }
+}
+ #print(value)
+r1 <- as.numeric(input$slider1)
+r2 <- as.numeric(input$slider2)
+
+x <- seq(1,length(a))
+xaxistitle <- list(title = "Time")
+yaxistitle <- list(title = "Light Status")
+z <- c("Printer Room,First Floor",
+       "Printer Room,Second Floor")
+
+if(r1 != r2){
+  p <- plot_ly(data, x = x, y = value, name = z[1],text = paste("At ",a), type = 'scatter', mode = 'lines') %>%
+    add_trace(y = value2,name = z[2], type = 'scatter', mode = 'lines') %>%
+    layout(xaxis = xaxistitle,yaxis = yaxistitle)
+}
+# if(r1 == r3){
+#   p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+#     add_trace(y = ~data$d2,name = z[r2], type = 'scatter', mode = 'lines') %>%
+#     layout(xaxis = xaxistitle,yaxis = yaxistitle)
+# }
+# if(r2 == r3){
+#   p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+#     add_trace(y = ~data$d2,name = z[r2], type = 'scatter', mode = 'lines') %>%
+#     layout(xaxis = xaxistitle,yaxis = yaxistitle)
+# }
+# if(r1 == r2 && r2==r3 && r1==r3){
+#   p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+#     layout(xaxis = xaxistitle,yaxis = yaxistitle)
+# }
+# if(r1 != r2 && r2 != r3 && r1 != r3){
+#   p <- plot_ly(data, x = (x/6), y = data$d1, name = z[r1],text = paste("At ",data$t), type = 'scatter', mode = 'lines') %>%
+#     add_trace(y = ~data$d2,name = z[r2], type = 'scatter', mode = 'lines') %>%
+#     add_trace(y = ~data$d3,name = z[r3], type = 'scatter', mode = 'lines') %>%
+#     layout(xaxis = xaxistitle,yaxis = yaxistitle)
+# }
+else{
+p <- plot_ly(x = x, y = value, name = z[1], text = paste("At ",a), type = 'scatter', mode = 'lines') %>%
+  layout(xaxis = xaxistitle,yaxis = yaxistitle)
+}
+p
+})
+  
+output$plot2<-renderPlotly({
+  
+  rdate = as.character(input$dateinput1)
+  rdate = strsplit(rdate,"-")
+
+  ihour = as.numeric(input$hourrange3[2])
+  chour = strtoi(format(Sys.time(),"%H"))
+  if(as.character(input$dateinput1)==Sys.Date() || as.character(input$dateinput2)==Sys.Date() || as.character(input$dateinput3)==Sys.Date()){
+    # if(ihour <= chour){
+    #   if(as.character(input$dateinput1)==Sys.Date()){
+    #     a = format(seq(ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange3[1]),0,0), ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange3[2]),59,0), "min"),"%R")
+    #   }
+    #   if(as.character(input$dateinput2)==Sys.Date()){
+    #     a = format(seq(ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange3[1]),0,0), ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange3[2]),59,0), "min"),"%R")
+    #   }
+    #   if(as.character(input$dateinput3)==Sys.Date()){
+    #     a = format(seq(ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange3[1]),0,0), ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange3[2]),59,0), "min"),"%R")
+    #   }
+    #   x <- seq(1,length(a))
+    #   # print(length(x))
+    #   invalidateLater(30000,session)
+    # }
+    invalidateLater(30000,session)
+    print("Yes")
+  }
+  else{
+    a = format(seq(ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange3[1]),0,0), ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),as.numeric(input$hourrange3[2]),59,0), "min"),"%R")
+    # print(length(a))
+    x <- seq(1,length(a))
+  }
+  
+  
+  
+  f <- paste("select DATE_FORMAT(time, '%H:%i') AS Time1 ",input$variable3," from Lightstatus where date = '",input$dateinput1,"' and HOUR(Time) between ",head(input$hourrange3,n=1)," and",tail(input$hourrange3,n=1)," and id = ",input$slider5," ;" )
+  s <- paste("select DATE_FORMAT(time, '%H:%i') AS Time2 ",input$variable3," from Lightstatus where date = '",input$dateinput2,"' and HOUR(Time) between ",head(input$hourrange3,n=1)," and",tail(input$hourrange3,n=1)," and id = ",input$slider5," ;" )
+  t <- paste("select DATE_FORMAT(time, '%H:%i') AS Time3 ",input$variable3," from Lightstatus where date = '",input$dateinput3,"' and HOUR(Time) between ",head(input$hourrange3,n=1)," and",tail(input$hourrange3,n=1)," and id = ",input$slider5," ;" )
+
+  rs = dbSendQuery(mydb, f)
+  data1 = fetch(rs, n=-1)
+  dbClearResult(dbListResults(mydb)[[1]])
+  rs = dbSendQuery(mydb, s)
+  data2 = fetch(rs, n=-1)
+  dbClearResult(dbListResults(mydb)[[1]])
+  rs = dbSendQuery(mydb, t)
+  data3 = fetch(rs, n=-1)
+  
+  first <- data1$Time1
+  second <- data2$Time2
+  third <- data3$Time3
+   # print(first)
+   # print(second)
+   # print(third)
+  value <- c(rep("OFF",length(a)))
+  # print(length(value))
+  if(length(first)!=0){
+  for(i in 1:length(first)){ 
+    for(j in 1:length(a)) { 
+      if(first[i]==a[j]){
+        if(j==(length(a)-1)){
+          value[j]="ON"
+          value[j+1]="ON"
+          break;
+        }
+        if(j==length(a)){
+          value[j]="ON"
+          break;
+        }
+        else{
+          value[j]="ON"
+          value[j+1]="ON"
+          value[j+2]="ON"
+          break;
+        }
+      }
+    }
+  }
+  }
+  # print(length(value))
+  value2 <- c(rep("OFF",length(a)))
+  if(length(second)!=0){
+  for(i in 1:length(second)){ 
+    for(j in 1:length(a)) { 
+      if(second[i]==a[j]){
+        if(j==(length(a)-1)){
+          value2[j]="ON"
+          value2[j+1]="ON"
+          break;
+        }
+        if(j==length(a)){
+          value2[j]="ON"
+          break;
+        }
+        else{
+          value2[j]="ON"
+          value2[j+1]="ON"
+          value2[j+2]="ON"
+          break;
+        }
+      }
+    }
+  }
+  }
+  value3 <- c(rep("OFF",length(a)))
+  if(length(third)!=0){
+  for(i in 1:length(third)){ 
+    for(j in 1:length(a)) { 
+      if(third[i]==a[j]){
+        if(j==(length(a)-1)){
+          value3[j]="ON"
+          value3[j+1]="ON"
+          break;
+        }
+        if(j==length(a)){
+          value3[j]="ON"
+          break;
+        }
+        else{
+          value3[j]="ON"
+          value3[j+1]="ON"
+          value3[j+2]="ON"
+          break;
+        }
+      }
+    }
+  }
+  }
+  #x <- seq(1,length(a))
+  xaxistitle <- list(title = "Time")
+  yaxistitle <- list(title = "Light Status")
+
+
+  if(as.character(input$dateinput1) == as.character(input$dateinput2)){
+    p <- plot_ly(x = x, y = value, name = input$dateinput1,text = paste("At ",a), type = 'scatter', mode = 'lines') %>%
+      add_trace(y = value3,name = input$dateinput3, type = 'scatter', mode = 'lines')%>%
+      layout(xaxis = xaxistitle,yaxis = yaxistitle)
+  }
+  if(as.character(input$dateinput1) == as.character(input$dateinput3)){
+    p <- plot_ly( x = x, y = value, name = input$dateinput1,text = paste("At ",a), type = 'scatter', mode = 'lines') %>%
+      add_trace(y = value2,name = input$dateinput2, type = 'scatter', mode = 'lines')%>%
+      layout(xaxis = xaxistitle,yaxis = yaxistitle)
+  }
+  if(as.character(input$dateinput2) == as.character(input$dateinput3)){
+    p <- plot_ly(x = x, y = value, name = input$dateinput1,text = paste("At ",a), type = 'scatter', mode = 'lines') %>%
+      add_trace(y = value2,name = input$dateinput2, type = 'scatter', mode = 'lines')%>%
+      layout(xaxis = xaxistitle,yaxis = yaxistitle)
+  }
+  if(as.character(input$dateinput1) == as.character(input$dateinput2) && as.character(input$dateinput2) == as.character(input$dateinput3) && as.character(input$dateinput1) == as.character(input$dateinput3)){
+    p <- plot_ly(x = x, y = value, name = input$dateinput2,text = paste("At ",a), type = 'scatter', mode = 'lines') %>%
+      layout(xaxis = xaxistitle,yaxis = yaxistitle)
+  }
+  if(as.character(input$dateinput1) != as.character(input$dateinput2) && as.character(input$dateinput2) != as.character(input$dateinput3) && as.character(input$dateinput1) != as.character(input$dateinput3)){
+    p <- plot_ly( x = x, y = value, name = input$dateinput1,text = paste("At ",a), type = 'scatter', mode = 'lines') %>%
+      add_trace(y = value2,name = input$dateinput2, type = 'scatter', mode = 'lines') %>%
+      add_trace(y = value3,name = input$dateinput3, type = 'scatter', mode = 'lines')%>%
+      layout(xaxis = xaxistitle,yaxis = yaxistitle)
+  }
+  # p <- plot_ly(data, x = x, y = value, name = input$dateinput1,text = paste("At ",a), type = 'scatter', mode = 'lines') %>%
+  #   add_trace(y = value2,name = input$dateinput2, type = 'scatter', mode = 'lines') %>%
+  #   add_trace(y = value3,name = input$dateinput3, type = 'scatter', mode = 'lines')%>%
+  #   layout(xaxis = xaxistitle,yaxis = yaxistitle)
+  p
+    })
+
+output$plot3<-renderPlotly({
+  rdate = as.character(input$dateinput4)
+  rdate = strsplit(rdate,"-")
+  
+  # ihour = as.numeric(input$hourrange3[2])
+  # chour = strtoi(format(Sys.time(),"%H"))
+  query <- paste("select DATE_FORMAT(time, '%H') AS timehour,count(*)*3 AS Total from Lightstatus where date='",input$dateinput4,"'and id=",input$slider6 ,"group by Hour(Time);")
+  rs = dbSendQuery(mydb, query)
+  data4 = fetch(rs, n=-1)
+  a = format(seq(ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),0,0,0), ISOdate(strtoi(rdate[[1]][1]),strtoi(rdate[[1]][2]),strtoi(rdate[[1]][3]),23,59,0), "hour"),"%H")
+   timehour <- data4$timehour
+   # print(timehour)
+  value4 <- c(rep(0,length(a)))
+   c <- data4$Total
+   # print(c)
+  for(i in 1:length(timehour)){
+    for(j in 1:length(a)){
+      if(timehour[i]==a[j]){
+        value4[j] = c[i]
+      }
+    }
+  }
+ # print(value4)
+   z <- c("Printer Room,First Floor",
+          "Printer Room,Second Floor")
+  hour = c("00:00-00:59","01:00-01:59","02:00-02:59","03:00-03:59","04:00-04:59","05:00-05:59","06:00-06:59","07:00-07:59","08:00-08:59","09:00-09:59","10:00-10:59","11:00-11:59","12:00-12:59","13:00-13:59","14:00-14:59","15:00-15:59","16:00-16:59","17:00-17:59","18:00-18:59","19:00-19:59","20:00-20:59","21:00-21:59","22:00-22:59","23:00-23:59")
+  xaxistitle <- list(title = "Time")
+  yaxistitle <- list(title = "Energy Consumption(in Minute)")
+  if(as.character(input$dateinput4)==Sys.Date()){
+    p <- plot_ly(x = a[1:(strtoi(format(Sys.time(),"%H"))+1)], y = value4[1:(strtoi(format(Sys.time(),"%H"))+1)],text = paste("Between ",hour[1:(strtoi(format(Sys.time(),"%H"))+1)]), type = 'bar', width = 0.5) %>% layout(title = paste("Energy Consumption in ",z[as.numeric(input$slider6)]),xaxis =  xaxistitle,yaxis = yaxistitle)  
+    invalidateLater(30000,session)
+    }else
+  {
+    p <- plot_ly(x = a, y = value4,text = paste("Between ",hour), type = 'bar', width = 0.5) %>% layout(title = paste("Energy Consumption in ",z[as.numeric(input$slider6)]),xaxis =  xaxistitle,yaxis = yaxistitle) 
+      
+  }
+  data6 = data.frame(a,value4,hour)
+  #write.csv(data6, file = "bar.csv")
+  p
+})
+output$plot4<-renderPlotly({
+  query1 <- paste("select count(*)*3 AS totalminute from Lightstatus where date='",input$dateinput4,"'and id=",input$slider6,";")
+  rs1 = dbSendQuery(mydb, query1)
+  data5 = fetch(rs1, n=-1)
+  label <- c("Light On","Light Off")
+  z <- c("Printer Room,First Floor",
+         "Printer Room,Second Floor")
+  if(as.character(input$dateinput4)==Sys.Date()){
+    invalidateLater(30000,session)
+    minute <- c(data5$totalminute,(((strtoi(format(Sys.time(),"%H"))+1)*60)-data5$totalminute))
+    data6 <- data.frame(label,minute)
+    
+    q <- plot_ly(data6, labels = ~label, values = ~minute, type = 'pie') %>%
+      layout(title = paste("Energy Consumption in ",z[as.numeric(input$slider6)]),
+             xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+  }else
+  {
+    minute <- c(data5$totalminute,(780-data5$totalminute))
+    data6 <- data.frame(label,minute)
+    #write.csv(data6, file = "pie.csv")
+    q <- plot_ly(data6, labels = ~label, values = ~minute, type = 'pie') %>%
+      layout(title = paste("                      Energy Consumption in ",z[as.numeric(input$slider6)]),
+             xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+  }
+  q
+})
+output$plot5<-renderPlotly({
+  invalidateLater(30000,session)
+  query <- paste("select Date,Hour(Time),COUNT(*) from Lightstatus where id=",input$slider7,"group by Date,Hour(Time);")
+  rs = dbSendQuery(mydb, query)
+  data1 = fetch(rs, n=-1)
+  # print(data1)
+  
+  a <- seq(as.Date("2017-4-15"), Sys.Date(), by="days")
+  fdata = data.frame(matrix(0L,nrow = length(a),ncol = 24))
+  rownames(fdata) <- a
+  for(val in c(1:nrow(data1))){
+    fdata[toString(data1[val,1]),data1[val,2]] = data1[val,3]
+  }
+  #ya = ""
+  ya = NULL
+  for(val in c(1:length(a))){
+    ya = c(ya,toString(a[val]))
+    # # print(ya)
+    # print(a[val])
+  }
+  b = t(seq(0,23))
+  hour = c("00:00-00:59","01:00-01:59","02:00-02:59","03:00-03:59","04:00-04:59","05:00-05:59","06:00-06:59","07:00-07:59","08:00-08:59","09:00-09:59","10:00-10:59","11:00-11:59","12:00-12:59","13:00-13:59","14:00-14:59","15:00-15:59","16:00-16:59","17:00-17:59","18:00-18:59","19:00-19:59","20:00-20:59","21:00-21:59","22:00-22:59","23:00-23:59")
+  rownames(b) = c("time")
+  xaxistitle <- list(title = "Time")
+  yaxistitle <- list(title = "Date")
+  fdata <- data.frame(0,fdata[1:23])
+  #p <- plot_ly(x = seq(0,23), y = as.Date(a),z = data.matrix(fdata),colorscale = "Greys", type = "heatmap")
+  p <- plot_ly(x = seq(0,23), y = ya,z = data.matrix(fdata*3), type = "heatmap") %>% layout(title = "Energy Consumption(in Minute) of Place by Date and Time",xaxis =  xaxistitle,yaxis = yaxistitle)  
+  #print(ya)
+  p
+})
+}
+runApp(shinyApp(ui=shinyUI, server = shinyServer),host="10.20.24.11",port=5052)
